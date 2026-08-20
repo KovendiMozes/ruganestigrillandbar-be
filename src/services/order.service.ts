@@ -8,7 +8,7 @@ export function getOrdersVersion() { return ordersVersion; }
 function bumpVersion() { ordersVersion += 1; }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Bucharest' });
 }
 
 async function generateOrderNumber(date: string): Promise<number> {
