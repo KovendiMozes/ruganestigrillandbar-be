@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(corepack enable *)",
+      "Bash(corepack prepare *)",
+      "Bash(pnpm -v)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(pnpm rebuild *)",
+      "Bash(docker info *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(lsof -iTCP:5432 -sTCP:LISTEN)",
+      "Bash(docker volume *)",
+      "Bash(docker exec *)",
+      "Bash(docker compose *)",
+      "Bash(pnpm prisma *)",
+      "Bash(mkdir -p /Users/mozes/Documents/rugonfalva/rugonfalva-grill-and-bar)",
+      "Bash(mv /Users/mozes/Documents/rugonfalva/rugonfalva-grill-and-bar-be /Users/mozes/Documents/rugonfalva/rugonfalva-grill-and-bar/be)",
+      "Bash(mkdir -p /Users/mozes/Documents/rugonfalva/rugonfalva-grill-and-bar/fe-admin)"
+    ]
+  }
+}

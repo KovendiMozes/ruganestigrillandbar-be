@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  nameEn    String?
+  nameRo    String?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  items     MenuItem[]
+}
+
+model Allergen {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  nameEn    String?
+  nameRo    String?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  items     MenuItem[] @relation("MenuItemAllergens")
+}
+
+model IngredientType {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  nameEn      String?
+  nameRo      String?
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  ingredients IngredientDef[]
+}
+
+model UnitType {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  nameEn      String?
+  nameRo      String?
+  createdAt   DateTime        @default(now())
+  ingredients IngredientDef[]
+}
+
+model IngredientDef {
+  id              String             @id @default(cuid())
+  name            String             @unique
+  nameEn          String?
+  nameRo          String?
+  priceRon        Float?
+  typeId          String?
+  type            IngredientType?    @relation(fields: [typeId], references: [id])
+  unitTypeId      String?
+  unitType        UnitType?          @relation(fields: [unitTypeId], references: [id])
+  hideFromKitchen Boolean            @default(false)
+  weightPerUnit   Float?
+  createdAt       DateTime           @default(now())
+  choices         IngredientChoice[]
+  variationSets   VariationSet[]
+
+  @@index([typeId])
+  @@index([unitTypeId])
+}
+
+model VariationSet {
+  id              String                  @id @default(cuid())
+  name            String
+  ingredientDefId String?
+  ingredientDef   IngredientDef?          @relation(fields: [ingredientDefId], references: [id])
+  hideFromKitchen Boolean                 @default(false)
+  createdAt       DateTime                @default(now())
+  options         VariationOption[]
+  menuItems       MenuItemVariationSet[]
+
+  @@index([ingredientDefId])
+}
+
+model MenuItemVariationSet {
+  menuItemId     String
+  variationSetId String
+  maxSelections  Int          @default(1)
+  menuItem       MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  variationSet   VariationSet @relation(fields: [variationSetId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, variationSetId])
+  @@index([variationSetId])
+}
+
+model VariationOption {
+  id         String             @id @default(cuid())
+  setId      String
+  set        VariationSet       @relation(fields: [setId], references: [id], onDelete: Cascade)
+  name       String
+  nameEn     String?
+  nameRo     String?
+  priceDelta Float?
+  order      Int                @default(0)
+  choices    IngredientChoice[]
+
+  @@index([setId])
+}
+
+model MenuItem {
+  id            String               @id @default(cuid())
+  categoryId    String
+  category      Category             @relation(fields: [categoryId], references: [id])
+  name          String
+  nameEn        String?
+  nameRo        String?
+  imageUrl      String?
+  totalWeightGr Int?
+  priceRon      Float
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  ingredients   MenuItemIngredient[]
+  variationSets MenuItemVariationSet[]
+  allergens     Allergen[]           @relation("MenuItemAllergens")
+
+  @@index([categoryId])
+}
+
+model MenuItemIngredient {
+  id            String             @id @default(cuid())
+  menuItemId    String
+  menuItem      MenuItem           @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  order         Int                @default(0)
+  maxSelections Int                @default(1)
+  choices       IngredientChoice[]
+
+  @@index([menuItemId])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber Int
+  date        String
+  type        String
+  status      String      @default("ORDERED")
+  totalRon    Float
+  note        String?
+  createdAt   DateTime    @default(now())
+  lines       OrderLine[]
+
+  @@unique([orderNumber, date])
+  @@index([date])
+  @@index([status])
+}
+
+model OrderLine {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineData  Json
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model IngredientChoice {
+  id                   String             @id @default(cuid())
+  menuItemIngredientId String
+  menuItemIngredient   MenuItemIngredient @relation(fields: [menuItemIngredientId], references: [id], onDelete: Cascade)
+  ingredientDefId      String
+  ingredientDef        IngredientDef      @relation(fields: [ingredientDefId], references: [id])
+  variationOptionId    String?
+  variationOption      VariationOption?   @relation(fields: [variationOptionId], references: [id])
+  weightGr             Int?
+  count                Int?
+  order                Int                @default(0)
+
+  @@index([menuItemIngredientId])
+  @@index([ingredientDefId])
+  @@index([variationOptionId])
+}

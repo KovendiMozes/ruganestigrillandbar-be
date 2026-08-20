@@ -1,0 +1,2 @@
+ALTER TABLE "MenuItem" ADD COLUMN "nameEn" TEXT;
+ALTER TABLE "MenuItem" ADD COLUMN "nameRo" TEXT;
