@@ -269,20 +269,40 @@ function enrichLine(
         const typeName = (c.ingredientDef as any)?.type?.name as string | undefined;
         const unit = (c.ingredientDef as any)?.unitType?.name as string | undefined;
         if (c.variationOption?.name) {
-          const isSelected = selOpts.some((o) => o.option?.id === c.variationOption.id);
+          const matchedOpt = selOpts.find((o) => o.option?.id === c.variationOption.id);
+          const isSelected = !!matchedOpt;
           const otherOptionSelected = selOpts.some(
-            (o) => o.ingredientDefId === c.ingredientDefId && o.option && o.option.id !== c.variationOption.id,
+            (o) => o.variationSetId === c.variationOption.setId && o.option && o.option.id !== c.variationOption.id,
           );
           if (!isSelected && otherOptionSelected) return [];
-          return [{ name, tag: c.variationOption.name as string, weightGr: resolveWeightGr(c), count: c.count || undefined, hideFromKitchen, representedInVariations: true, typeName, unit }];
+          const actualQty = matchedOpt?.qty ?? c.count;
+          const totalSelectedQtyForSet = selOpts
+            .filter((o) => o.variationSetId === c.variationOption.setId)
+            .reduce((sum, o) => sum + o.qty, 0);
+          let weightGr: number | undefined;
+          if (c.weightGr && totalSelectedQtyForSet > 0) {
+            // c.weightGr = full slot weight; prorate by how many of this variant were selected
+            weightGr = Math.round((actualQty / totalSelectedQtyForSet) * c.weightGr * 10) / 10 || undefined;
+          } else if (c.ingredientDef?.weightPerUnit) {
+            weightGr = Math.round(actualQty * c.ingredientDef.weightPerUnit * 10) / 10 || undefined;
+          } else {
+            weightGr = c.weightGr ?? undefined;
+          }
+          return [{ name, tag: c.variationOption.name as string, weightGr, count: actualQty || undefined, hideFromKitchen, representedInVariations: true, typeName, unit }];
         }
         if (c.ingredientDefId) {
           const matched = selOpts.filter((o) => o.ingredientDefId === c.ingredientDefId && o.option);
           if (matched.length > 0) {
+            const totalSelectedQty = matched.reduce((sum, o) => sum + o.qty, 0);
             return matched.map((o) => {
-              const weightGr = c.weightGr || (o.qty && c.ingredientDef?.weightPerUnit
-                ? Math.round(o.qty * c.ingredientDef.weightPerUnit * 10) / 10
-                : resolveWeightGr(c));
+              let weightGr: number | undefined;
+              if (c.weightGr && totalSelectedQty > 0) {
+                weightGr = Math.round((o.qty / totalSelectedQty) * c.weightGr * 10) / 10 || undefined;
+              } else if (o.qty && c.ingredientDef?.weightPerUnit) {
+                weightGr = Math.round(o.qty * c.ingredientDef.weightPerUnit * 10) / 10;
+              } else {
+                weightGr = resolveWeightGr(c);
+              }
               return {
                 name,
                 tag: o.option.name as string,
