@@ -160,17 +160,18 @@ function enrichLine(
       hideFromKitchen: (o.option.set.hideFromKitchen as boolean) ?? false,
     }));
 
-  const extras: EnrichedLine['extras'] = (storedLine.extras ?? []).map((e) => {
+  const extras: EnrichedLine['extras'] = (storedLine.extras ?? []).flatMap((e) => {
     const ing = ingDefMap.get(e.ingredientDefId);
     const eOpts = e.selectedOptions ?? [];
-    const totalQty = eOpts.reduce((s: number, o: any) => s + o.qty, 0) || e.qty;
-    const tag = eOpts.length > 0
-      ? eOpts.map((o: any) => {
-          const opt = optionMap.get(o.optionId) as any;
-          return opt?.name ?? '?';
-        }).join(', ')
-      : undefined;
-    return { name: ing?.name ?? '?', tag, qty: totalQty > 1 ? totalQty : undefined, hideFromKitchen: ing?.hideFromKitchen ?? false, typeName: (ing as any)?.type?.name as string | undefined };
+    const hideFromKitchen = ing?.hideFromKitchen ?? false;
+    const typeName = (ing as any)?.type?.name as string | undefined;
+    if (eOpts.length > 0) {
+      return eOpts.map((o: any) => {
+        const opt = optionMap.get(o.optionId) as any;
+        return { name: ing?.name ?? '?', tag: opt?.name ?? '?', qty: o.qty > 1 ? o.qty : undefined, hideFromKitchen, typeName };
+      });
+    }
+    return [{ name: ing?.name ?? '?', tag: undefined, qty: e.qty > 1 ? e.qty : undefined, hideFromKitchen, typeName }];
   });
 
   const extrasTotal = (storedLine.extras ?? []).reduce((s, e) => {
